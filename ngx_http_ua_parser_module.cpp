@@ -142,6 +142,10 @@ static void ngx_http_ua_parser_ctx_cleanup(void *data) {
 static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
 {
+    auto upmf = static_cast<ngx_http_ua_parser_main_conf_t *>(
+        ngx_http_get_module_main_conf(r, ngx_http_ua_parser_module)
+    );
+
     auto uplf = static_cast<ngx_http_ua_parser_loc_conf_t *>(
         ngx_http_get_module_loc_conf(r, ngx_http_ua_parser_module)
     );
@@ -149,8 +153,9 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
     ngx_str_t     source;
     std::string   ua;
     std::string   value;
+    auto          parser = upmf->parser;
 
-    if (!uplf->enabled) {
+    if (!uplf->enabled || upmf->parser == NULL) {
         /* parser disabled */
         v->not_found = 1;
         return NGX_OK;
@@ -182,12 +187,6 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 
     /* only bother parsing if we have a user agent */
     if (!ua.empty()) {
-        /* load parser from conf */
-        auto upmf = static_cast<ngx_http_ua_parser_main_conf_t *>(
-            ngx_http_get_module_main_conf(r, ngx_http_ua_parser_module)
-        );
-        auto parser = upmf->parser;
-
         /* load parsed user agent from context */
         auto ctx = static_cast<ngx_http_ua_parser_ctx_t *>(
             ngx_http_get_module_ctx(r, ngx_http_ua_parser_module)
@@ -397,6 +396,9 @@ ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf)
     }
 
     cln->handler = ngx_http_ua_parser_cleanup;
+
+    auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(cln->data);
+    conf->parser = NULL; 
 
     return cln->data;
 }
