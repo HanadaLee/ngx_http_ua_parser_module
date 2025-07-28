@@ -55,7 +55,7 @@ static ngx_command_t ngx_http_ua_parser_commands[] = {
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_set_complex_value_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      0,
+      offsetof(ngx_http_ua_parser_loc_conf_t, source),
       NULL },
 
       ngx_null_command
@@ -407,7 +407,9 @@ ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data)
 {
     auto conf = static_cast<ngx_http_ua_parser_main_conf_t*>(data);
 
-    ngx_conf_init_str_value(conf->regexes_file, "");
+    if (conf->regexes_file.data == NULL) {
+        conf->regexes_file.len = 0;
+    }
 
     if (conf->regexes_file.len == 0) {
         return NGX_CONF_OK;
