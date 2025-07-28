@@ -424,9 +424,18 @@ ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-    umcf->parser = new uap_cpp::UserAgentParser(
-        std::string(reinterpret_cast<char *>(value[1].data), value[1].len)
-    );
+    try {
+        umcf->parser = new uap_cpp::UserAgentParser(
+            std::string(reinterpret_cast<char *>(value[1].data), value[1].len)
+        );
+
+        if (!umcf->parser) {
+            return (char *) NGX_CONF_ERROR;
+        }
+
+    } catch (...) {
+        return (char *) NGX_CONF_ERROR;
+    }
 
     return NGX_CONF_OK;
 }
