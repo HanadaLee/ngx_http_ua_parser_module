@@ -9,7 +9,6 @@ extern "C" {
 
 struct ngx_http_ua_parser_main_conf_t {
     uap_cpp::UserAgentParser  *parser;
-    ngx_str_t                  regexes_file;
 };
 
 
@@ -30,18 +29,20 @@ struct ngx_http_ua_parser_ctx_t {
 
 static ngx_int_t ngx_http_ua_parser_add_variables(ngx_conf_t *cf);
 static void *ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf);
-static char *ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data);
 static void *ngx_http_ua_parser_create_loc_conf(ngx_conf_t *cf);
-static char *ngx_http_ua_parser_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
+static char *ngx_http_ua_parser_merge_loc_conf(ngx_conf_t *cf, void *parent,
+    void *child);
+static char *ngx_http_ua_parser_regexes_file(ngx_conf_t *cf,
+    ngx_command_t *cmd, void *conf);
 
 
 static ngx_command_t ngx_http_ua_parser_commands[] = {
 
     { ngx_string("ua_parser_regexes_file"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-      ngx_conf_set_str_slot,
+      ngx_http_ua_parser_regexes_file,
       NGX_HTTP_MAIN_CONF_OFFSET,
-      offsetof(ngx_http_ua_parser_main_conf_t, regexes_file),
+      0,
       NULL },
 
     { ngx_string("ua_parser"),
@@ -67,7 +68,7 @@ static ngx_http_module_t ngx_http_ua_parser_module_ctx = {
     NULL,                                 /* postconfiguration */
 
     ngx_http_ua_parser_create_main_conf,  /* create main configuration */
-    ngx_http_ua_parser_init_main_conf,    /* init main configuration */
+    NULL,                                 /* init main configuration */
 
     NULL,                                 /* create server configuration */
     NULL,                                 /* merge server configuration */
@@ -399,34 +400,32 @@ ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf)
 
     auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(cln->data);
     conf->parser = NULL;
-    conf->regexes_file.len = 0;
-    conf->regexes_file.data = NULL;
 
     return cln->data;
 }
 
 
 static char *
-ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data)
+ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    auto conf = static_cast<ngx_http_ua_parser_main_conf_t*>(data);
+    auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(data);
 
-    if (conf->regexes_file.data == NULL) {
-        conf->regexes_file.len = 0;
+    ngx_str_t     *value;
+
+    if (conf->parser != NULL) {
+        return "is duplicate";
     }
 
-    if (conf->regexes_file.len == 0) {
-        return NGX_CONF_OK;
-    }
+    value = cf->args->elts;
 
-    if (conf->regexes_file.data && conf->regexes_file.data[0] != '/') {
-        if (ngx_conf_full_name(cf->cycle, &conf->regexes_file, 0) != NGX_OK) {
+    if (value[1].data && value[1].data[0] != '/') {
+        if (ngx_conf_full_name(cf->cycle, &value[1], 0) != NGX_OK) {
             return (char *) NGX_CONF_ERROR;
         }
     }
 
     conf->parser = new uap_cpp::UserAgentParser(
-        std::string(reinterpret_cast<char *>(conf->regexes_file.data), conf->regexes_file.len)
+        std::string(reinterpret_cast<char *>(value[1].data), value[1].len)
     );
 
     return NGX_CONF_OK;
