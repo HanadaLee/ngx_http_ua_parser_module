@@ -7,12 +7,12 @@ extern "C" {
 #include <iostream>
 
 
-struct ngx_http_uaparser_main_conf_t {
+struct ngx_http_ua_parser_main_conf_t {
     uap_cpp::UserAgentParser *inner;
 };
 
 
-struct ngx_http_uaparser_request_ctx_t {
+struct ngx_http_ua_parser_request_ctx_t {
     uap_cpp::UserAgent *inner;
     bool parsed_device;
     bool parsed_os;
@@ -20,52 +20,52 @@ struct ngx_http_uaparser_request_ctx_t {
 };
 
 
-static ngx_int_t ngx_http_uaparser_add_variables(ngx_conf_t *cf);
-static void *ngx_http_uaparser_create_main_conf(ngx_conf_t *cf);
-static char *ngx_http_uaparser_init_main_conf(ngx_conf_t *cf, void *data);
+static ngx_int_t ngx_http_ua_parser_add_variables(ngx_conf_t *cf);
+static void *ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf);
+static char *ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data);
 
 
-static ngx_http_module_t ngx_http_uaparser_module_ctx = {
-    ngx_http_uaparser_add_variables,     /* preconfiguration */
-    NULL,                                /* postconfiguration */
+static ngx_http_module_t ngx_http_ua_parser_module_ctx = {
+    ngx_http_ua_parser_add_variables,     /* preconfiguration */
+    NULL,                                 /* postconfiguration */
 
-    ngx_http_uaparser_create_main_conf,  /* create main configuration */
-    ngx_http_uaparser_init_main_conf,    /* init main configuration */
+    ngx_http_ua_parser_create_main_conf,  /* create main configuration */
+    ngx_http_ua_parser_init_main_conf,    /* init main configuration */
 
-    NULL,                                /* create server configuration */
-    NULL,                                /* merge server configuration */
+    NULL,                                 /* create server configuration */
+    NULL,                                 /* merge server configuration */
 
-    NULL,                                /* create location configuration */
-    NULL                                 /* merge location configuration */
+    NULL,                                 /* create location configuration */
+    NULL                                  /* merge location configuration */
 };
 
 
 extern "C" {
-    ngx_module_t ngx_http_uaparser_module = {
+    ngx_module_t ngx_http_ua_parser_module = {
         NGX_MODULE_V1,
-        &ngx_http_uaparser_module_ctx,   /* module context */
-        NULL,                            /* module directives */
-        NGX_HTTP_MODULE,                 /* module type */
-        NULL,                            /* init master */
-        NULL,                            /* init module */
-        NULL,                            /* init process */
-        NULL,                            /* init thread */
-        NULL,                            /* exit thread */
-        NULL,                            /* exit process */
-        NULL,                            /* exit master */
+        &ngx_http_ua_parser_module_ctx,   /* module context */
+        NULL,                             /* module directives */
+        NGX_HTTP_MODULE,                  /* module type */
+        NULL,                             /* init master */
+        NULL,                             /* init module */
+        NULL,                             /* init process */
+        NULL,                             /* init thread */
+        NULL,                             /* exit thread */
+        NULL,                             /* exit process */
+        NULL,                             /* exit master */
         NGX_MODULE_V1_PADDING
     };
 }
 
 
-enum class ngx_http_uaparser_data_t : uintptr_t {
+enum class ngx_http_ua_parser_data_t : uintptr_t {
     device = 1,
     os = 2,
     browser = 3,
 };
 
 
-enum class ngx_http_uaparser_var_t : uintptr_t {
+enum class ngx_http_ua_parser_var_t : uintptr_t {
     device_family = 0x11,
     device_model = 0x21,
     device_brand = 0x31,
@@ -83,9 +83,9 @@ enum class ngx_http_uaparser_var_t : uintptr_t {
 
 
 /* schema for defining a variable */
-struct ngx_http_uaparser_var_schema_t {
+struct ngx_http_ua_parser_var_schema_t {
     ngx_str_t name;
-    ngx_http_uaparser_var_t data;
+    ngx_http_ua_parser_var_t data;
 };
 
 /* note ahead of time */
@@ -93,8 +93,8 @@ struct ngx_http_uaparser_var_schema_t {
 
 
 /* delete context */
-static void ngx_http_uaparser_delete_request_ctx(void *data) {
-    auto ctx = static_cast<ngx_http_uaparser_request_ctx_t*>(data);
+static void ngx_http_ua_parser_delete_request_ctx(void *data) {
+    auto ctx = static_cast<ngx_http_ua_parser_request_ctx_t*>(data);
     if (ctx->inner != NULL) {
         delete ctx->inner;
     }
@@ -117,22 +117,22 @@ static ngx_int_t ngx_http_uaparser(
     std::string value;
     if (!ua.empty()) {
         /* load parser from conf */
-        auto conf = static_cast<ngx_http_uaparser_main_conf_t*>(
-            ngx_http_get_module_main_conf(r, ngx_http_uaparser_module)
+        auto conf = static_cast<ngx_http_ua_parser_main_conf_t*>(
+            ngx_http_get_module_main_conf(r, ngx_http_ua_parser_module)
         );
         auto parser = conf->inner;
 
         /* load parsed user agent from context */
-        auto ctx = static_cast<ngx_http_uaparser_request_ctx_t*>(
-            ngx_http_get_module_ctx(r, ngx_http_uaparser_module)
+        auto ctx = static_cast<ngx_http_ua_parser_request_ctx_t*>(
+            ngx_http_get_module_ctx(r, ngx_http_ua_parser_module)
         );
         if (ctx == NULL) {
-            auto cln = ngx_pool_cleanup_add(r->pool, sizeof(ngx_http_uaparser_request_ctx_t));
+            auto cln = ngx_pool_cleanup_add(r->pool, sizeof(ngx_http_ua_parser_request_ctx_t));
             if (cln == NULL) {
                 return NGX_ERROR;
             }
-            cln->handler = ngx_http_uaparser_delete_request_ctx;
-            ctx = static_cast<ngx_http_uaparser_request_ctx_t*>(cln->data);
+            cln->handler = ngx_http_ua_parser_delete_request_ctx;
+            ctx = static_cast<ngx_http_ua_parser_request_ctx_t*>(cln->data);
             ctx->inner = new uap_cpp::UserAgent{
                 uap_cpp::Device(), uap_cpp::Agent(), uap_cpp::Agent()
 
@@ -145,19 +145,19 @@ static ngx_int_t ngx_http_uaparser(
 
         /* parse relevant part of user agent */
         switch (data & 0xF) {
-            case (uintptr_t)ngx_http_uaparser_data_t::device:
+            case (uintptr_t)ngx_http_ua_parser_data_t::device:
                 if (!ctx->parsed_device) {
                     parsed->device = parser->parse_device(ua);
                     ctx->parsed_device = true;
                 }
             break;
-            case (uintptr_t)ngx_http_uaparser_data_t::os:
+            case (uintptr_t)ngx_http_ua_parser_data_t::os:
                 if (!ctx->parsed_os) {
                     parsed->os = parser->parse_os(ua);
                     ctx->parsed_os = true;
                 }
             break;
-            case (uintptr_t)ngx_http_uaparser_data_t::browser:
+            case (uintptr_t)ngx_http_ua_parser_data_t::browser:
                 if (!ctx->parsed_browser) {
                     parsed->browser = parser->parse_browser(ua);
                     ctx->parsed_browser = true;
@@ -169,43 +169,43 @@ static ngx_int_t ngx_http_uaparser(
 
         /* pull out parsed variable */
         switch (data) {
-            case (uintptr_t)ngx_http_uaparser_var_t::device_family:
+            case (uintptr_t)ngx_http_ua_parser_var_t::device_family:
                 value = parsed->device.family;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::device_model:
+            case (uintptr_t)ngx_http_ua_parser_var_t::device_model:
                 value = parsed->device.model;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::device_brand:
+            case (uintptr_t)ngx_http_ua_parser_var_t::device_brand:
                 value = parsed->device.brand;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::os_family:
+            case (uintptr_t)ngx_http_ua_parser_var_t::os_family:
                 value = parsed->os.family;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::os_version_major:
+            case (uintptr_t)ngx_http_ua_parser_var_t::os_version_major:
                 value = parsed->os.major;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::os_version_minor:
+            case (uintptr_t)ngx_http_ua_parser_var_t::os_version_minor:
                 value = parsed->os.minor;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::os_version_patch:
+            case (uintptr_t)ngx_http_ua_parser_var_t::os_version_patch:
                 value = parsed->os.patch;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::os_version_patch_minor:
+            case (uintptr_t)ngx_http_ua_parser_var_t::os_version_patch_minor:
                 value = parsed->os.patch_minor;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::browser_family:
+            case (uintptr_t)ngx_http_ua_parser_var_t::browser_family:
                 value = parsed->browser.family;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::browser_version_major:
+            case (uintptr_t)ngx_http_ua_parser_var_t::browser_version_major:
                 value = parsed->browser.major;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::browser_version_minor:
+            case (uintptr_t)ngx_http_ua_parser_var_t::browser_version_minor:
                 value = parsed->browser.minor;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::browser_version_patch:
+            case (uintptr_t)ngx_http_ua_parser_var_t::browser_version_patch:
                 value = parsed->browser.patch;
             break;
-            case (uintptr_t)ngx_http_uaparser_var_t::browser_version_patch_minor:
+            case (uintptr_t)ngx_http_ua_parser_var_t::browser_version_patch_minor:
                 value = parsed->browser.patch_minor;
             break;
             default:
@@ -250,12 +250,12 @@ static ngx_int_t ngx_http_uaparser(
             reinterpret_cast<const unsigned char*>("uap_" #x "_" #y) \
         ) \
     }, \
-    ngx_http_uaparser_var_t::x ## _ ## y \
+    ngx_http_ua_parser_var_t::x ## _ ## y \
 }
 
 
 /* all the variables we'll have */
-static ngx_http_uaparser_var_schema_t ngx_http_uaparser_vars[UAP_NUM_VARS] = {
+static ngx_http_ua_parser_var_schema_t ngx_http_ua_parser_vars[UAP_NUM_VARS] = {
     UAP_VAR(device, family),
     UAP_VAR(device, model),
     UAP_VAR(device, brand),
@@ -273,9 +273,9 @@ static ngx_http_uaparser_var_schema_t ngx_http_uaparser_vars[UAP_NUM_VARS] = {
 
 
 /* add the variables to the context */
-static ngx_int_t ngx_http_uaparser_add_variables(ngx_conf_t *cf) {
+static ngx_int_t ngx_http_ua_parser_add_variables(ngx_conf_t *cf) {
     for (size_t i = 0; i < UAP_NUM_VARS; ++i) {
-        auto &schema = ngx_http_uaparser_vars[i];
+        auto &schema = ngx_http_ua_parser_vars[i];
 
         auto var = ngx_http_add_variable(cf, &schema.name, 0);
         if (var == NULL) {
@@ -289,26 +289,26 @@ static ngx_int_t ngx_http_uaparser_add_variables(ngx_conf_t *cf) {
 
 
 /* delete the configuration */
-static void ngx_http_uaparser_delete_main_conf(void *data) {
-    auto conf = static_cast<ngx_http_uaparser_main_conf_t*>(data);
+static void ngx_http_ua_parser_delete_main_conf(void *data) {
+    auto conf = static_cast<ngx_http_ua_parser_main_conf_t*>(data);
     delete conf->inner;
 }
 
 
-static char *ngx_http_uaparser_init_main_conf(ngx_conf_t *cf, void *data) {
-    auto conf = static_cast<ngx_http_uaparser_main_conf_t*>(data);
+static char *ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data) {
+    auto conf = static_cast<ngx_http_ua_parser_main_conf_t*>(data);
     conf->inner = new uap_cpp::UserAgentParser("/usr/share/uap-core/regexes.yaml");
     return NGX_CONF_OK;
 }
 
 
-static void *ngx_http_uaparser_create_main_conf(ngx_conf_t *cf) {
-    auto cln = ngx_pool_cleanup_add(cf->pool, sizeof(ngx_http_uaparser_main_conf_t));
+static void *ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf) {
+    auto cln = ngx_pool_cleanup_add(cf->pool, sizeof(ngx_http_ua_parser_main_conf_t));
     if (cln == NULL) {
         return NULL;
     }
 
-    cln->handler = ngx_http_uaparser_delete_main_conf;
+    cln->handler = ngx_http_ua_parser_delete_main_conf;
 
     return cln->data;
 }

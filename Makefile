@@ -42,23 +42,23 @@ nginx-%-uaparser-module.so: configure-%
 		false; \
 	fi
 	cd nginx-$* && make modules
-	cp nginx-$*/objs/ngx_http_uaparser_module.so nginx-$*-uaparser-module.so
+	cp nginx-$*/objs/ngx_http_ua_parser_module.so nginx-$*-uaparser-module.so
 
 nginx-%-bin: configure-%
 	cd nginx-$* && make build
 	cp nginx-$*/objs/nginx nginx-$*-bin
 
 lint-cppcheck:
-	cppcheck ngx_http_uaparser_module.cpp $(CPPCHECKFLAGS)
+	cppcheck ngx_http_ua_parser_module.cpp $(CPPCHECKFLAGS)
 
 lint-eclint:
 	eclint check
 
 lint-clang-%: configure-%
-	clang++ -o /dev/null -c ngx_http_uaparser_module.cpp $(CXXFLAGS) $(addprefix -Inginx-$*/,src/core src/event src/event/modules src/os/unix src/http src/http src/http/modules objs)
+	clang++ -o /dev/null -c ngx_http_ua_parser_module.cpp $(CXXFLAGS) $(addprefix -Inginx-$*/,src/core src/event src/event/modules src/os/unix src/http src/http src/http/modules objs)
 
 lint-gcc-%: configure-%
-	gcc -o /dev/null -c ngx_http_uaparser_module.cpp $(CXXFLAGS) $(addprefix -Inginx-$*/,src/core src/event src/event/modules src/os/unix src/http src/http src/http/modules objs)
+	gcc -o /dev/null -c ngx_http_ua_parser_module.cpp $(CXXFLAGS) $(addprefix -Inginx-$*/,src/core src/event src/event/modules src/os/unix src/http src/http src/http/modules objs)
 
 lint-%: lint-eclint lint-cppcheck lint-gcc-% lint-clang-% ;
 

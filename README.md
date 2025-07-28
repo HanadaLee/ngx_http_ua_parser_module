@@ -59,7 +59,7 @@ substituting `$VERSION` for the necessary version of nginx.
     `lint-gcc-$VERSION` and `lint-clang-$VERSION` are also available if you only want to test one
     or the other.
 * `make build-$VERSION`: builds the module and copies it to `nginx-$VERSION-uaparser-module.so`.
-    although the actual name of the module will have to be `ngx_http_uaparser_module.so` when
+    although the actual name of the module will have to be `ngx_http_ua_parser_module.so` when
     installed, this naming scheme includes the nginx version as well.
 * `make test-$VERSION`: builds nginx with the module included and runs a test suite.
 
