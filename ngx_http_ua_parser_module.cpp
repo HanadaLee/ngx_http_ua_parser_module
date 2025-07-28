@@ -131,7 +131,7 @@ struct ngx_http_ua_parser_var_schema_t {
 
 /* cleanup context */
 static void ngx_http_ua_parser_ctx_cleanup(void *data) {
-    auto ctx = static_cast<ngx_http_ua_parser_ctx_t*>(data);
+    auto ctx = static_cast<ngx_http_ua_parser_ctx_t *>(data);
     if (ctx->parser != NULL) {
         delete ctx->parser;
     }
@@ -142,7 +142,7 @@ static void ngx_http_ua_parser_ctx_cleanup(void *data) {
 static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
 {
-    auto uplf = static_cast<ngx_http_ua_parser_loc_conf_t*>(
+    auto uplf = static_cast<ngx_http_ua_parser_loc_conf_t *>(
         ngx_http_get_module_loc_conf(r, ngx_http_ua_parser_module)
     );
 
@@ -160,7 +160,7 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
         /* convert request user agent to string */
         auto ua_elt = r->headers_in.user_agent;
         ua = ua_elt->hash
-            ? std::string(reinterpret_cast<char*>(ua_elt->value.data), ua_elt->value.len)
+            ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len)
             : std::string();
 
     } else {
@@ -170,12 +170,12 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
         }
 
         if (source.len > 0) {
-            ua = std::string(reinterpret_cast<char*>(source.data), source.len);
+            ua = std::string(reinterpret_cast<char *>(source.data), source.len);
 
         } else {
             auto ua_elt = r->headers_in.user_agent;
             ua = ua_elt->hash 
-                ? std::string(reinterpret_cast<char*>(ua_elt->value.data), ua_elt->value.len) 
+                ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len) 
                 : std::string();
         }
     }
@@ -183,13 +183,13 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
     /* only bother parsing if we have a user agent */
     if (!ua.empty()) {
         /* load parser from conf */
-        auto upmf = static_cast<ngx_http_ua_parser_main_conf_t*>(
+        auto upmf = static_cast<ngx_http_ua_parser_main_conf_t *>(
             ngx_http_get_module_main_conf(r, ngx_http_ua_parser_module)
         );
         auto parser = upmf->parser;
 
         /* load parsed user agent from context */
-        auto ctx = static_cast<ngx_http_ua_parser_ctx_t*>(
+        auto ctx = static_cast<ngx_http_ua_parser_ctx_t *>(
             ngx_http_get_module_ctx(r, ngx_http_ua_parser_module)
         );
 
@@ -200,7 +200,7 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
             }
 
             cln->handler = ngx_http_ua_parser_ctx_cleanup;
-            ctx = static_cast<ngx_http_ua_parser_ctx_t*>(cln->data);
+            ctx = static_cast<ngx_http_ua_parser_ctx_t *>(cln->data);
             ctx->parser = new uap_cpp::UserAgent{
                 uap_cpp::Device(), uap_cpp::Agent(), uap_cpp::Agent(), std::string()
             };
@@ -309,7 +309,7 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 
     } else {
         /* allocate string */
-        unsigned char* str = reinterpret_cast<unsigned char*>(ngx_palloc(r->pool, value.size()));
+        unsigned char *str = reinterpret_cast<unsigned char *>(ngx_palloc(r->pool, value.size()));
         if (str == NULL) {
             return NGX_ERROR;
         }
@@ -333,8 +333,8 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 #define UAP_VAR(x, y) { \
     { \
         sizeof("uap_" #x "_" #y) - 1, \
-        const_cast<unsigned char*>( \
-            reinterpret_cast<const unsigned char*>("uap_" #x "_" #y) \
+        const_cast<unsigned char *>( \
+            reinterpret_cast<const unsigned char *>("uap_" #x "_" #y) \
         ) \
     }, \
     ngx_http_ua_parser_var_t::x ## _ ## y \
@@ -383,7 +383,7 @@ ngx_http_ua_parser_add_variables(ngx_conf_t *cf)
 static void
 ngx_http_ua_parser_cleanup(void *data)
 {
-    auto conf = static_cast<ngx_http_ua_parser_main_conf_t*>(data);
+    auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(data);
     delete conf->parser;
 }
 
@@ -417,12 +417,12 @@ ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data)
 
     if (conf->regexes_file.data && conf->regexes_file.data[0] != '/') {
         if (ngx_conf_full_name(cf->cycle, &conf->regexes_file, 0) != NGX_OK) {
-            return NGX_CONF_ERROR;
+            return (char *) NGX_CONF_ERROR;
         }
     }
 
     conf->parser = new uap_cpp::UserAgentParser(
-        std::string(reinterpret_cast<char*>(conf->regexes_file.data), conf->regexes_file.len)
+        std::string(reinterpret_cast<char *>(conf->regexes_file.data), conf->regexes_file.len)
     );
 
     return NGX_CONF_OK;
@@ -432,7 +432,7 @@ ngx_http_ua_parser_init_main_conf(ngx_conf_t *cf, void *data)
 static void *
 ngx_http_ua_parser_create_loc_conf(ngx_conf_t *cf)
 {
-    auto conf = static_cast<ngx_http_ua_parser_loc_conf_t*>(
+    auto conf = static_cast<ngx_http_ua_parser_loc_conf_t *>(
         ngx_pcalloc(cf->pool, sizeof(ngx_http_ua_parser_loc_conf_t))
     );
     if (conf == NULL) {
@@ -440,7 +440,7 @@ ngx_http_ua_parser_create_loc_conf(ngx_conf_t *cf)
     }
 
     conf->enabled = NGX_CONF_UNSET;
-    conf->source = NGX_CONF_UNSET_PTR;
+    conf->source = (ngx_http_complex_value_t *) NGX_CONF_UNSET_PTR;
 
     return conf;
 }
@@ -449,8 +449,8 @@ ngx_http_ua_parser_create_loc_conf(ngx_conf_t *cf)
 static char *
 ngx_http_ua_parser_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 {
-    auto prev = static_cast<ngx_http_ua_parser_loc_conf_t*>(parent);
-    auto conf = static_cast<ngx_http_ua_parser_loc_conf_t*>(child);
+    auto prev = static_cast<ngx_http_ua_parser_loc_conf_t *>(parent);
+    auto conf = static_cast<ngx_http_ua_parser_loc_conf_t *>(child);
 
     ngx_conf_merge_value(conf->enabled, prev->enabled, 0);
     ngx_conf_merge_ptr_value(conf->source, prev->source, NULL);
