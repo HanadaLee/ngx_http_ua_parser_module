@@ -433,7 +433,16 @@ ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             return (char *) NGX_CONF_ERROR;
         }
 
+    } catch (const std::exception& e) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+                           "ua_parser: UserAgentParser init fail: %s",
+                           e.what());
+        return (char *) NGX_CONF_ERROR;
+
     } catch (...) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "ua_parser: UserAgentParser init fail: "
+                           "unknown exception");
         return (char *) NGX_CONF_ERROR;
     }
 
