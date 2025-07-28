@@ -408,13 +408,11 @@ ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf)
 static char *
 ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(
-        ngx_http_conf_get_module_main_conf(cf, ngx_http_ua_parser_module)
-    );
+    auto umcf = static_cast<ngx_http_ua_parser_main_conf_t *>(conf);
 
     ngx_str_t      *value;
 
-    if (conf->parser != NULL) {
+    if (umcf->parser != NULL) {
         return const_cast<char *>("is duplicate");
     }
 
@@ -426,7 +424,7 @@ ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-    conf->parser = new uap_cpp::UserAgentParser(
+    umcf->parser = new uap_cpp::UserAgentParser(
         std::string(reinterpret_cast<char *>(value[1].data), value[1].len)
     );
 
