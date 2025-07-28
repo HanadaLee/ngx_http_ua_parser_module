@@ -398,7 +398,9 @@ ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf)
     cln->handler = ngx_http_ua_parser_cleanup;
 
     auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(cln->data);
-    conf->parser = NULL; 
+    conf->parser = NULL;
+    conf->regexes_file.len = 0;
+    conf->regexes_file.data = NULL;
 
     return cln->data;
 }
