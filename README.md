@@ -1,4 +1,4 @@
-# `nginx-uaparser-module`
+# `ngx_http_ua_parser_module`
 
 Wrapper for [uap-cpp] as an nginx module.
 
@@ -11,24 +11,43 @@ itself has a more restrictive license.
 ## Usage
 
 This module will (lazily) parse the user agent for each request for device, OS, and browser
-information using [uap-core]. Instead of configuring what YAML file is used for the rules, the
-module loads `/usr/share/uap-core/regexes.yaml` every time nginx starts.
+information using [uap-core]. 
+
+The following directives are available:
+
+* Syntax: `ua_parser_regexes_file <file>;`
+* Default: `-`
+* Context: `http`
+
+Defines the path to the uap-core regexes file. If not specified, the parser will be disabled.
+
+* Syntax: `ua_parser on | off;`
+* Default: `off`
+* Context: `http, server, location`
+
+Enables or disables the ua parser.
+
+* Syntax: `ua_parser_source string;`
+* Default: `$http_user_agent`
+* Context: `http, server, location`
+
+Defines the source string to parse. If not specified or value is empty, the default is `$http_user_agent`.
 
 The following variables are available, as defined by the uap-core spec:
 
-* `$uap_device_family`
-* `$uap_device_model`
-* `$uap_device_brand`
-* `$uap_os_family`
-* `$uap_os_version_major`
-* `$uap_os_version_minor`
-* `$uap_os_version_patch`
-* `$uap_os_version_patch_minor`
-* `$uap_browser_family`
-* `$uap_browser_version_major`
-* `$uap_browser_version_minor`
-* `$uap_browser_version_patch`
-* `$uap_browser_version_patch_minor`
+* `$ua_parser_device_family`
+* `$ua_parser_device_model`
+* `$ua_parser_device_brand`
+* `$ua_parser_os_family`
+* `$ua_parser_os_version_major`
+* `$ua_parser_os_version_minor`
+* `$ua_parser_os_version_patch`
+* `$ua_parser_os_version_patch_minor`
+* `$ua_parser_browser_family`
+* `$ua_parser_browser_version_major`
+* `$ua_parser_browser_version_minor`
+* `$ua_parser_browser_version_patch`
+* `$ua_parser_browser_version_patch_minor`
 
 [uap-core]: https://github.com/ua-parser/uap-core/blob/master/docs/specification.md
 
@@ -47,7 +66,7 @@ to work on the latest commit of uap-cpp.
 ## Building/testing
 
 This project depends on uap-cpp, which must be installed globally to `/usr/lib/libuaparser_cpp.so`
-and `/usr/include/UaParser.h` separately. This project's `Makefile` includes a custom build script
+and `/usr/include/uap-cpp/UaParser` separately. This project's `Makefile` includes a custom build script
 which downloads the relevant source for nginx to build the module, and that step is not required.
 
 The makefile includes a number of options to build and test the project as listed below,

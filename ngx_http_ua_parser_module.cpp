@@ -332,9 +332,9 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 /* note: we can't use ngx_string here because it's invalid C++, even though it's valid C */
 #define UAP_VAR(x, y) { \
     { \
-        sizeof("uap_" #x "_" #y) - 1, \
+        sizeof("ua_parser_" #x "_" #y) - 1, \
         const_cast<unsigned char *>( \
-            reinterpret_cast<const unsigned char *>("uap_" #x "_" #y) \
+            reinterpret_cast<const unsigned char *>("ua_parser_" #x "_" #y) \
         ) \
     }, \
     ngx_http_ua_parser_var_t::x ## _ ## y \
