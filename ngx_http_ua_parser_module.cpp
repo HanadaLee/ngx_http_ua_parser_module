@@ -4,7 +4,6 @@ extern "C" {
     #include <ngx_http.h>
 }
 #include <uap-cpp/UaParser>
-#include <iostream>
 
 
 struct ngx_http_ua_parser_main_conf_t {
@@ -207,6 +206,7 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
             ctx->parsed_device = false;
             ctx->parsed_os = false;
             ctx->parsed_browser = false;
+            r->ctx[ngx_http_ua_parser_module.ctx_index] = ctx;
         }
 
         auto parsed = ctx->parser;
