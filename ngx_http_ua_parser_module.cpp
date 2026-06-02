@@ -164,7 +164,7 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
     if (uplf->source == NULL) {
         /* convert request user agent to string */
         auto ua_elt = r->headers_in.user_agent;
-        ua = ua_elt->hash
+        ua = (ua_elt != NULL && ua_elt->hash)
             ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len)
             : std::string();
 
@@ -179,9 +179,9 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 
         } else {
             auto ua_elt = r->headers_in.user_agent;
-            ua = ua_elt->hash 
-                ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len) 
-                : std::string();
+            ua = (ua_elt != NULL && ua_elt->hash)
+                 ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len)
+                 : std::string();
         }
     }
 
