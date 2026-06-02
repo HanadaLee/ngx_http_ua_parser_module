@@ -130,17 +130,21 @@ struct ngx_http_ua_parser_var_schema_t {
 
 
 /* cleanup context */
-static void ngx_http_ua_parser_ctx_cleanup(void *data) {
+static void
+ngx_http_ua_parser_ctx_cleanup(void *data)
+{
     auto ctx = static_cast<ngx_http_ua_parser_ctx_t *>(data);
     if (ctx->parser != NULL) {
         delete ctx->parser;
+        ctx->parser = NULL;
     }
 }
 
 
 /* parse any variable */
-static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
-    ngx_http_variable_value_t *v, uintptr_t data)
+static ngx_int_t
+ngx_http_ua_parser(ngx_http_request_t *r, ngx_http_variable_value_t *v,
+    uintptr_t data)
 {
     auto upmf = static_cast<ngx_http_ua_parser_main_conf_t *>(
         ngx_http_get_module_main_conf(r, ngx_http_ua_parser_module)
@@ -165,7 +169,9 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
         /* convert request user agent to string */
         auto ua_elt = r->headers_in.user_agent;
         ua = (ua_elt != NULL && ua_elt->hash)
-            ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len)
+            ? std::string(
+                reinterpret_cast<char *>(ua_elt->value.data),
+                ua_elt->value.len)
             : std::string();
 
     } else {
@@ -180,7 +186,9 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
         } else {
             auto ua_elt = r->headers_in.user_agent;
             ua = (ua_elt != NULL && ua_elt->hash)
-                 ? std::string(reinterpret_cast<char *>(ua_elt->value.data), ua_elt->value.len)
+                 ? std::string(
+                     reinterpret_cast<char *>(ua_elt->value.data),
+                     ua_elt->value.len)
                  : std::string();
         }
     }
@@ -193,20 +201,26 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
         );
 
         if (ctx == NULL) {
-            auto cln = ngx_pool_cleanup_add(r->pool, sizeof(ngx_http_ua_parser_ctx_t));
+            auto cln = ngx_pool_cleanup_add(r->pool,
+                                            sizeof(ngx_http_ua_parser_ctx_t));
             if (cln == NULL) {
                 return NGX_ERROR;
             }
 
             cln->handler = ngx_http_ua_parser_ctx_cleanup;
             ctx = static_cast<ngx_http_ua_parser_ctx_t *>(cln->data);
-            ctx->parser = new uap_cpp::UserAgent{
-                uap_cpp::Device(), uap_cpp::Agent(), uap_cpp::Agent(), std::string()
-            };
+            ctx->parser = NULL;
             ctx->parsed_device = false;
             ctx->parsed_os = false;
             ctx->parsed_browser = false;
             r->ctx[ngx_http_ua_parser_module.ctx_index] = ctx;
+
+            ctx->parser = new uap_cpp::UserAgent{
+                uap_cpp::Device(),
+                uap_cpp::Agent(),
+                uap_cpp::Agent(),
+                std::string()
+            };
         }
 
         auto parsed = ctx->parser;
@@ -309,7 +323,9 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 
     } else {
         /* allocate string */
-        unsigned char *str = reinterpret_cast<unsigned char *>(ngx_palloc(r->pool, value.size()));
+        unsigned char *str =
+            reinterpret_cast<unsigned char *>(ngx_palloc(r->pool,
+                                                         value.size()));
         if (str == NULL) {
             return NGX_ERROR;
         }
@@ -329,15 +345,16 @@ static ngx_int_t ngx_http_ua_parser(ngx_http_request_t *r,
 
 
 /* shorthand for defining a variable */
-/* note: we can't use ngx_string here because it's invalid C++, even though it's valid C */
-#define UAP_VAR(x, y) { \
-    { \
-        sizeof("ua_parser_" #x "_" #y) - 1, \
-        const_cast<unsigned char *>( \
-            reinterpret_cast<const unsigned char *>("ua_parser_" #x "_" #y) \
-        ) \
-    }, \
-    ngx_http_ua_parser_var_t::x ## _ ## y \
+/* note: we can't use ngx_string here because it's invalid C++,
+ * even though it's valid C */
+#define UAP_VAR(x, y) {                                                       \
+    {                                                                         \
+        sizeof("ua_parser_" #x "_" #y) - 1,                                   \
+        const_cast<unsigned char *>(                                          \
+            reinterpret_cast<const unsigned char *>("ua_parser_" #x "_" #y)   \
+        )                                                                     \
+    },                                                                        \
+    ngx_http_ua_parser_var_t::x ## _ ## y                                     \
 }
 
 
@@ -357,6 +374,9 @@ static ngx_http_ua_parser_var_schema_t ngx_http_ua_parser_vars[UAP_NUM_VARS] = {
     UAP_VAR(browser, version_patch),
     UAP_VAR(browser, version_patch_minor)
 };
+
+
+#undef UAP_VAR
 
 
 /* add the variables to the context */
@@ -384,14 +404,18 @@ static void
 ngx_http_ua_parser_cleanup(void *data)
 {
     auto conf = static_cast<ngx_http_ua_parser_main_conf_t *>(data);
-    delete conf->parser;
+    if (conf->parser != NULL) {
+        delete conf->parser;
+        conf->parser = NULL;
+    }
 }
 
 
 static void *
 ngx_http_ua_parser_create_main_conf(ngx_conf_t *cf)
 {
-    auto cln = ngx_pool_cleanup_add(cf->pool, sizeof(ngx_http_ua_parser_main_conf_t));
+    auto cln = ngx_pool_cleanup_add(cf->pool,
+                                    sizeof(ngx_http_ua_parser_main_conf_t));
     if (cln == NULL) {
         return NULL;
     }
