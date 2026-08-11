@@ -103,6 +103,7 @@ enum class ngx_http_ua_parser_data_t : uintptr_t {
 
 
 enum class ngx_http_ua_parser_var_t : uintptr_t {
+    invalid = 0,
     device_family = 0x11,
     device_model = 0x21,
     device_brand = 0x31,
@@ -124,9 +125,6 @@ struct ngx_http_ua_parser_var_schema_t {
     ngx_str_t                 name;
     ngx_http_ua_parser_var_t  data;
 };
-
-/* note ahead of time */
-#define UAP_NUM_VARS 13
 
 
 /* cleanup context */
@@ -168,11 +166,11 @@ ngx_http_ua_parser(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     if (uplf->source == NULL) {
         /* convert request user agent to string */
         auto ua_elt = r->headers_in.user_agent;
-        ua = (ua_elt != NULL && ua_elt->hash)
-            ? std::string(
-                reinterpret_cast<char *>(ua_elt->value.data),
-                ua_elt->value.len)
-            : std::string();
+
+        if (ua_elt != NULL && ua_elt->hash) {
+            ua.assign(reinterpret_cast<char *>(ua_elt->value.data),
+                      ua_elt->value.len);
+        }
 
     } else {
 
@@ -185,11 +183,11 @@ ngx_http_ua_parser(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 
         } else {
             auto ua_elt = r->headers_in.user_agent;
-            ua = (ua_elt != NULL && ua_elt->hash)
-                 ? std::string(
-                     reinterpret_cast<char *>(ua_elt->value.data),
-                     ua_elt->value.len)
-                 : std::string();
+
+            if (ua_elt != NULL && ua_elt->hash) {
+                ua.assign(reinterpret_cast<char *>(ua_elt->value.data),
+                          ua_elt->value.len);
+            }
         }
     }
 
@@ -329,6 +327,7 @@ ngx_http_ua_parser(ngx_http_request_t *r, ngx_http_variable_value_t *v,
         if (str == NULL) {
             return NGX_ERROR;
         }
+
         std::copy(value.begin(), value.end(), str);
 
         /* set variable */
@@ -344,55 +343,80 @@ ngx_http_ua_parser(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 }
 
 
-/* shorthand for defining a variable */
-/* note: we can't use ngx_string here because it's invalid C++,
- * even though it's valid C */
-#define UAP_VAR(x, y) {                                                       \
-    {                                                                         \
-        sizeof("ua_parser_" #x "_" #y) - 1,                                   \
-        const_cast<unsigned char *>(                                          \
-            reinterpret_cast<const unsigned char *>("ua_parser_" #x "_" #y)   \
-        )                                                                     \
-    },                                                                        \
-    ngx_http_ua_parser_var_t::x ## _ ## y                                     \
-}
-
-
 /* all the variables we'll have */
-static ngx_http_ua_parser_var_schema_t ngx_http_ua_parser_vars[UAP_NUM_VARS] = {
-    UAP_VAR(device, family),
-    UAP_VAR(device, model),
-    UAP_VAR(device, brand),
-    UAP_VAR(os, family),
-    UAP_VAR(os, version_major),
-    UAP_VAR(os, version_minor),
-    UAP_VAR(os, version_patch),
-    UAP_VAR(os, version_patch_minor),
-    UAP_VAR(browser, family),
-    UAP_VAR(browser, version_major),
-    UAP_VAR(browser, version_minor),
-    UAP_VAR(browser, version_patch),
-    UAP_VAR(browser, version_patch_minor)
+static ngx_http_ua_parser_var_schema_t
+ngx_http_ua_parser_vars[] = {
+    { { sizeof("ua_parser_device_family") - 1,
+        (u_char *) "ua_parser_device_family" },
+      ngx_http_ua_parser_var_t::device_family },
+
+    { { sizeof("ua_parser_device_model") - 1,
+        (u_char *) "ua_parser_device_model" },
+      ngx_http_ua_parser_var_t::device_model },
+
+    { { sizeof("ua_parser_device_brand") - 1,
+        (u_char *) "ua_parser_device_brand" },
+      ngx_http_ua_parser_var_t::device_brand },
+
+    { { sizeof("ua_parser_os_family") - 1,
+        (u_char *) "ua_parser_os_family" },
+      ngx_http_ua_parser_var_t::os_family },
+
+    { { sizeof("ua_parser_os_version_major") - 1,
+        (u_char *) "ua_parser_os_version_major" },
+      ngx_http_ua_parser_var_t::os_version_major },
+
+    { { sizeof("ua_parser_os_version_minor") - 1,
+        (u_char *) "ua_parser_os_version_minor" },
+      ngx_http_ua_parser_var_t::os_version_minor },
+
+    { { sizeof("ua_parser_os_version_patch") - 1,
+        (u_char *) "ua_parser_os_version_patch" },
+      ngx_http_ua_parser_var_t::os_version_patch },
+
+    { { sizeof("ua_parser_os_version_patch_minor") - 1,
+        (u_char *) "ua_parser_os_version_patch_minor" },
+      ngx_http_ua_parser_var_t::os_version_patch_minor },
+
+    { { sizeof("ua_parser_browser_family") - 1,
+        (u_char *) "ua_parser_browser_family" },
+      ngx_http_ua_parser_var_t::browser_family },
+
+    { { sizeof("ua_parser_browser_version_major") - 1,
+        (u_char *) "ua_parser_browser_version_major" },
+      ngx_http_ua_parser_var_t::browser_version_major },
+
+    { { sizeof("ua_parser_browser_version_minor") - 1,
+        (u_char *) "ua_parser_browser_version_minor" },
+      ngx_http_ua_parser_var_t::browser_version_minor },
+
+    { { sizeof("ua_parser_browser_version_patch") - 1,
+        (u_char *) "ua_parser_browser_version_patch" },
+      ngx_http_ua_parser_var_t::browser_version_patch },
+
+    { { sizeof("ua_parser_browser_version_patch_minor") - 1,
+        (u_char *) "ua_parser_browser_version_patch_minor" },
+      ngx_http_ua_parser_var_t::browser_version_patch_minor },
+
+    { ngx_null_string, ngx_http_ua_parser_var_t::invalid }
 };
-
-
-#undef UAP_VAR
 
 
 /* add the variables to the context */
 static ngx_int_t
 ngx_http_ua_parser_add_variables(ngx_conf_t *cf)
 {
-    for (size_t i = 0; i < UAP_NUM_VARS; ++i) {
-        auto &schema = ngx_http_ua_parser_vars[i];
+    ngx_http_variable_t              *var;
+    ngx_http_ua_parser_var_schema_t  *schema;
 
-        auto var = ngx_http_add_variable(cf, &schema.name, 0);
+    for (schema = ngx_http_ua_parser_vars; schema->name.len; schema++) {
+        var = ngx_http_add_variable(cf, &schema->name, 0);
         if (var == NULL) {
             return NGX_ERROR;
         }
 
         var->get_handler = ngx_http_ua_parser;
-        var->data = (uintptr_t) schema.data;
+        var->data = (uintptr_t) schema->data;
     }
 
     return NGX_OK;
@@ -457,8 +481,8 @@ ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             return (char *) NGX_CONF_ERROR;
         }
 
-    } catch (const std::exception& e) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+    } catch (const std::exception &e) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                            "ua_parser: UserAgentParser init fail: %s",
                            e.what());
         return (char *) NGX_CONF_ERROR;
@@ -477,12 +501,15 @@ ngx_http_ua_parser_regexes_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 static void *
 ngx_http_ua_parser_create_loc_conf(ngx_conf_t *cf)
 {
-    auto conf = static_cast<ngx_http_ua_parser_loc_conf_t *>(
-        ngx_pcalloc(cf->pool, sizeof(ngx_http_ua_parser_loc_conf_t))
-    );
-    if (conf == NULL) {
+    void                           *p;
+    ngx_http_ua_parser_loc_conf_t  *conf;
+
+    p = ngx_pcalloc(cf->pool, sizeof(ngx_http_ua_parser_loc_conf_t));
+    if (p == NULL) {
         return NULL;
     }
+
+    conf = static_cast<ngx_http_ua_parser_loc_conf_t *>(p);
 
     conf->enabled = NGX_CONF_UNSET;
     conf->source = (ngx_http_complex_value_t *) NGX_CONF_UNSET_PTR;
