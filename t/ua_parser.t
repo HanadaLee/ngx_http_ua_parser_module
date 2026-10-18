@@ -21,13 +21,21 @@ select STDOUT; $| = 1;
 my $t = Test::Nginx->new()->has(qw/http rewrite
 	ngx_http_ua_parser_module/)->plan(9);
 
-open my $fh, '<', '../uap-cpp/uap-core/regexes.yaml'
-	or die "failed to open regexes.yaml: $!";
-local $/;
-my $regexes = <$fh>;
-close $fh;
+# Keep the fixture independent of the dependency checkout and installed data.
+$t->write_file('regexes.yaml', <<'EOF');
+user_agent_parsers:
+  - regex: '(Version)/(\d+)\.(\d+).*Mobile/.*Safari/'
+    family_replacement: 'Mobile Safari'
+os_parsers:
+  - regex: '(iPhone OS) (\d+)_(\d+)_(\d+)'
+    os_replacement: 'iOS'
+device_parsers:
+  - regex: '(iPhone)'
+    device_replacement: 'iPhone'
+    brand_replacement: 'Apple'
+    model_replacement: 'iPhone'
+EOF
 
-$t->write_file('regexes.yaml', $regexes);
 $t->write_file_expand('nginx.conf', <<'EOF');
 
 %%TEST_GLOBALS%%
