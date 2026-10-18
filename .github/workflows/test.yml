@@ -27,6 +27,7 @@ jobs:
       - name: Check out module
         uses: actions/checkout@v6
         with:
+          submodules: recursive
           persist-credentials: false
 
       - name: Check out nginx-ext
@@ -35,14 +36,6 @@ jobs:
           repository: HanadaLee/nginx-ext
           ref: ${{ inputs.nginx_ref || '1.31.7' }}
           path: .ci/nginx
-          persist-credentials: false
-
-      - name: Check out uap-cpp
-        uses: actions/checkout@v6
-        with:
-          repository: ua-parser/uap-cpp
-          path: uap-cpp
-          submodules: recursive
           persist-credentials: false
 
       - name: Check out nginx-tests
